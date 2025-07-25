@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎼 智能和弦推荐系统 | Intelligent Chord Recommendation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chord-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .chord-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .diatonic { border-left-color: #3B82F6; }
+        .secondary-dominant { border-left-color: #EF4444; }
+        .double-dominant { border-left-color: #F59E0B; }
+        .modal-interchange { border-left-color: #10B981; }
+        .chord-substitution { border-left-color: #8B5CF6; }
+        
+        .probability-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #EF4444, #F59E0B, #10B981);
+            border-radius: 2px;
+        }
+        
+        .mode-selector {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .recommendation-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen text-white">
+    <!-- Header -->
+    <header class="glass-effect sticky top-0 z-50 p-4">
+        <div class="container mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-music text-3xl text-yellow-400"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">智能和弦推荐系统</h1>
+                    <p class="text-sm opacity-80">Intelligent Chord Recommendation System</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="helpBtn" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors">
+                    <i class="fas fa-question-circle text-xl"></i>
+                </button>
+                <button id="settingsBtn" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors">
+                    <i class="fas fa-cog text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Control Panel -->
+        <section class="mode-selector rounded-2xl p-6 mb-8 glass-effect">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Key Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-3">
+                        <i class="fas fa-key mr-2"></i>主调 (Key)
+                    </label>
+                    <select id="keySelector" class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                        <option value="C">C Major / A Minor</option>
+                        <option value="C#">C# Major / A# Minor</option>
+                        <option value="D">D Major / B Minor</option>
+                        <option value="D#">D# Major / C Minor</option>
+                        <option value="E">E Major / C# Minor</option>
+                        <option value="F">F Major / D Minor</option>
+                        <option value="F#">F# Major / D# Minor</option>
+                        <option value="G">G Major / E Minor</option>
+                        <option value="G#">G# Major / F Minor</option>
+                        <option value="A">A Major / F# Minor</option>
+                        <option value="A#">A# Major / G Minor</option>
+                        <option value="B">B Major / G# Minor</option>
+                    </select>
+                </div>
+
+                <!-- Mode Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-3">
+                        <i class="fas fa-sliders-h mr-2"></i>调式 (Mode)
+                    </label>
+                    <select id="modeSelector" class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                        <option value="Ionian">Ionian (伊奥尼亚 - 大调)</option>
+                        <option value="Aeolian">Aeolian (爱奥利亚 - 小调)</option>
+                        <option value="Dorian">Dorian (多里安)</option>
+                        <option value="Phrygian">Phrygian (弗里几亚)</option>
+                        <option value="Lydian">Lydian (利底亚)</option>
+                        <option value="Mixolydian">Mixolydian (混合利底亚)</option>
+                        <option value="Locrian">Locrian (洛克里亚)</option>
+                        <option value="HarmonicMinor">Harmonic Minor (和声小调)</option>
+                        <option value="MelodicMinor">Melodic Minor (旋律小调)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Current Chord Input -->
+            <div class="mt-6">
+                <label class="block text-sm font-medium mb-3">
+                    <i class="fas fa-guitar mr-2"></i>当前和弦 (Current Chord)
+                </label>
+                <div class="flex space-x-3">
+                    <input 
+                        type="text" 
+                        id="currentChordInput" 
+                        placeholder="例如: Am, Cmaj7, G7, Dm9..."
+                        class="flex-1 p-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    >
+                    <button 
+                        id="analyzeBtn" 
+                        class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-colors"
+                    >
+                        <i class="fas fa-search mr-2"></i>分析
+                    </button>
+                </div>
+            </div>
+
+            <!-- Current Scale Display -->
+            <div id="currentScaleDisplay" class="mt-4 p-4 bg-white bg-opacity-10 rounded-lg hidden">
+                <h3 class="font-semibold mb-2">当前调式音阶:</h3>
+                <div id="scaleNotes" class="flex flex-wrap gap-2"></div>
+            </div>
+        </section>
+
+        <!-- Recommendations Grid -->
+        <section class="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+            <!-- Diatonic Recommendations -->
+            <div class="recommendation-card bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+                <div class="flex items-center mb-4">
+                    <div class="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                    <h2 class="text-xl font-bold">调内和弦</h2>
+                    <span class="ml-2 text-sm opacity-70">Diatonic</span>
+                </div>
+                <div id="diatonicRecommendations" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-music text-3xl mb-2"></i>
+                        <p>请选择当前和弦开始分析</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Dominant Recommendations -->
+            <div class="recommendation-card bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+                <div class="flex items-center mb-4">
+                    <div class="w-4 h-4 bg-red-500 rounded mr-3"></div>
+                    <h2 class="text-xl font-bold">副属和弦</h2>
+                    <span class="ml-2 text-sm opacity-70">Secondary Dominant</span>
+                </div>
+                <div id="secondaryDominantRecommendations" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-arrow-right text-3xl mb-2"></i>
+                        <p>等待和弦分析...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Double Dominant Recommendations -->
+            <div class="recommendation-card bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+                <div class="flex items-center mb-4">
+                    <div class="w-4 h-4 bg-yellow-500 rounded mr-3"></div>
+                    <h2 class="text-xl font-bold">重属和弦</h2>
+                    <span class="ml-2 text-sm opacity-70">Double Dominant</span>
+                </div>
+                <div id="doubleDominantRecommendations" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-link text-3xl mb-2"></i>
+                        <p>等待和弦分析...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Interchange Recommendations -->
+            <div class="recommendation-card bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+                <div class="flex items-center mb-4">
+                    <div class="w-4 h-4 bg-green-500 rounded mr-3"></div>
+                    <h2 class="text-xl font-bold">调式借用</h2>
+                    <span class="ml-2 text-sm opacity-70">Modal Interchange</span>
+                </div>
+                <div id="modalInterchangeRecommendations" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-exchange-alt text-3xl mb-2"></i>
+                        <p>等待和弦分析...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chord Substitution Recommendations -->
+            <div class="recommendation-card bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+                <div class="flex items-center mb-4">
+                    <div class="w-4 h-4 bg-purple-500 rounded mr-3"></div>
+                    <h2 class="text-xl font-bold">和弦替代</h2>
+                    <span class="ml-2 text-sm opacity-70">Substitutions</span>
+                </div>
+                <div id="chordSubstitutionRecommendations" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-random text-3xl mb-2"></i>
+                        <p>等待和弦分析...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comprehensive Recommendations -->
+            <div class="recommendation-card bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+                <div class="flex items-center mb-4">
+                    <div class="w-4 h-4 bg-gradient-to-r from-pink-500 to-yellow-500 rounded mr-3"></div>
+                    <h2 class="text-xl font-bold">综合推荐</h2>
+                    <span class="ml-2 text-sm opacity-70">Top Picks</span>
+                </div>
+                <div id="comprehensiveRecommendations" class="space-y-3">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-star text-3xl mb-2"></i>
+                        <p>等待和弦分析...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chord Progression Builder -->
+        <section class="bg-white bg-opacity-10 rounded-2xl p-6 glass-effect">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-list-ol text-2xl mr-3 text-yellow-400"></i>
+                    <h2 class="text-2xl font-bold">和弦进行构建器</h2>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="clearProgressionBtn" class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
+                        <i class="fas fa-trash mr-2"></i>清空
+                    </button>
+                    <button id="playProgressionBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
+                        <i class="fas fa-play mr-2"></i>播放
+                    </button>
+                </div>
+            </div>
+            
+            <div id="chordProgression" class="flex flex-wrap gap-3 min-h-16 p-4 bg-black bg-opacity-20 rounded-lg border-2 border-dashed border-gray-500">
+                <div class="text-gray-400 text-center w-full py-4">
+                    点击推荐的和弦来构建进行...
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white text-black rounded-2xl p-8 max-w-2xl max-h-96 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">使用帮助</h2>
+                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-semibold text-blue-600">🎯 调内和弦 (Diatonic)</h3>
+                    <p class="text-sm text-gray-600">基于当前调式的自然和弦进行，遵循传统和声学规律</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-red-600">🎯 副属和弦 (Secondary Dominant)</h3>
+                    <p class="text-sm text-gray-600">为调内和弦创建临时的属和弦，增加和声色彩</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-yellow-600">🎯 重属和弦 (Double Dominant)</h3>
+                    <p class="text-sm text-gray-600">多层属和弦链，如 V/V/V，创造更复杂的和声进行</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-green-600">🎯 调式借用 (Modal Interchange)</h3>
+                    <p class="text-sm text-gray-600">从平行调式借用和弦，丰富和声调色板</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-purple-600">🎯 和弦替代 (Substitutions)</h3>
+                    <p class="text-sm text-gray-600">使用减七、半减、增和弦等替代传统和弦</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="fixed top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded-lg hidden">
+        <i class="fas fa-spinner fa-spin mr-2"></i>分析中...
+    </div>
+
+    <!-- JavaScript -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
